@@ -10,7 +10,7 @@ long red = 0xFF0000;
 long green = 0x00FF00;
 long blue = 0x000080;
 
-int band = 35; // ajuste de sensibilidade
+int band = 350; // ajuste de sensibilidade
 
 void setup() {
   pinMode (redPin, OUTPUT);
@@ -50,8 +50,8 @@ void loop() {
   for (int i = 0; i < 1000; i++)
   {
     digitalWrite (buzzerPin, HIGH);
-    delayMicroseconds (100);
+    delayMicroseconds(100);
     digitalWrite (buzzerPin, LOW);
-    delayMicroseconds (100); 
+    delayMicroseconds(100); 
   }
   }
