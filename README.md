@@ -1,3 +1,3 @@
-#Repositório da disciplina de Eletrônica Embarcada.
+**Repositório da disciplina de Eletrônica Embarcada**
 
-Pontos de Controle do Projeto e Códigos
+Pontos de Controle e Códigos do Projeto (Detector de Mentiras)
