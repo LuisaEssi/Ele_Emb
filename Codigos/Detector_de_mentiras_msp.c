@@ -1,12 +1,12 @@
 #include <msp430.h> 
 #include <legacymsp430.h>
 
-#define LEDRED BIT3 // P1.3
-#define LEDGREEN BIT4 // P1.4
-#define LEDBLUE BIT0 // P1.0
-
+# define LEDRED BIT3 // P1.3
+# define LEDGREEN BIT4 // P1.4
+# define LEDBLUE BIT0 // P1.0
+# define N 20
 //LCD
-
+#define BTN BIT3
 #define LCD_OUT P2OUT
 #define LCD_DIR P2DIR
 #define D4 BIT0
@@ -25,18 +25,17 @@
 
 // AD
 #define CANAIS_ADC 2 // vetor com A0 e A1
-
 #define IN_AD BIT1 // P1.1 potenciometro
-
 #define IN_AD1 BIT2 // P1.2 sensor
-
 
 
 int resis[CANAIS_ADC];
 
 int sensor, poten ; // estara incluso em resis
 
-int band = 250; //sensibilidade
+int band = 230; //sensibilidade
+
+int i,media = 0;
 
 void Atraso_us(volatile unsigned int us);
 void Send_Nibble(volatile unsigned char nibble, volatile unsigned char dados, volatile unsigned int microsegs);
@@ -45,33 +44,38 @@ void Send_Data(volatile unsigned char byte);
 void Send_String(char str[]);
 void Send_Int(int n);
 void InitLCD(void);
-volatile int i = 0;
+
 int main(void)
 {
-       WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
+    WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
 
-       P1DIR |= LEDRED;
-       P1OUT = LEDRED;
+    P1DIR |= LEDRED;
+    P1OUT = LEDRED;
 
-       P1DIR |= LEDGREEN;
-       P1OUT = LEDGREEN;
+    P1DIR |= LEDGREEN;
+    P1OUT = LEDGREEN;
 
-       P1DIR |= LEDBLUE;
-       P1OUT = LEDBLUE;
+    P1DIR |= LEDBLUE;
+    P1OUT = LEDBLUE;
 
-       ADC10CTL0 = MSC + SREF_0 + ADC10SHT_0 + ADC10ON + ADC10IE;
-       ADC10CTL1 |= INCH_2 + ADC10SSEL_3 + CONSEQ_3;
-       ADC10AE0 |= IN_AD + IN_AD1; // bits correspondentes a cada pino da msp
-       ADC10DTC1 = CANAIS_ADC;
-       ADC10CTL0 |= ENC + ADC10SC;
-       InitLCD();
-       Send_String("Detector de Mentiras");
+    ADC10CTL0 = MSC + SREF_0 + ADC10SHT_0 + ADC10ON + ADC10IE;
+    ADC10CTL1 |= INCH_2 + ADC10SSEL_3 + CONSEQ_3; //multiplas conversões
+    ADC10AE0 |= IN_AD + IN_AD1; // bits correspondentes a cada pino da msp
+    ADC10DTC1 = CANAIS_ADC;
+    ADC10CTL0 |= ENC + ADC10SC;
+    InitLCD();
+    _BIS_SR(GIE);
 
-       _BIS_SR(GIE);
    while (1){
 
-    poten = resis[0]; //MODIFIQUEI d novo
-    sensor = resis[1]; //carrega as resistencias para as variaveis correspondentes
+
+    poten = resis[0];
+    for (i = 0; i < N-1 ; i++) {
+
+    media+=resis[1]/N;  // faz uma media dos valores obtidos
+    }
+    sensor = media;
+    media = 0;
 
     ADC10CTL0 &= ~ENC; //encerra a conversão AD
 
@@ -91,30 +95,26 @@ int main(void)
 __interrupt void ADC10_ISR(void)
      {
 
+    CLR_DISPLAY;
+    POS0_DISPLAY;
 
       if ( sensor > poten + band){
-
+        Send_String("    Mentira");
         P1OUT = LEDRED;
         //  ativar buzzer em assembly
-        CLR_DISPLAY;
-        POS0_DISPLAY;
-        Send_Int(i++);
-        Send_String("Mentira");
+        buzzer();
 
       }
       else if (sensor < poten - band) {
+        Send_String("    Ajustar");
         P1OUT = LEDBLUE;
-        CLR_DISPLAY;
-        POS0_DISPLAY;
-        Send_Int(i++);
-        Send_String("Ajustar");
+
       }
       else {
-          P1OUT = LEDGREEN;
-          CLR_DISPLAY;
-          POS0_DISPLAY;
-          Send_Int(i++);
-          Send_String("Verdade");
+
+        Send_String("    Verdade");
+        P1OUT = LEDGREEN;
+
       }
       __bic_SR_register(GIE);
      }
@@ -196,6 +196,3 @@ void InitLCD(void)
     CLR_DISPLAY;
     POS0_DISPLAY;
 }
-
-
-
